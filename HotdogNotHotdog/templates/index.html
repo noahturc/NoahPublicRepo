@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hotdog or Not Hotdog</title>
+
+
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* Container holding the phone and buttons */
+    .container {
+      display: flex;
+      align-items: center;
+      width: 90%;
+      max-width: 1200px;
+      justify-content: center;  /* Added to center the phone and buttons */
+      margin: 0 auto;
+
+    }
+    /* Left-side buttons */
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;  /* Added to center the buttons within the column */
+      margin-right: 20px;
+    }
+    .buttons button {
+      margin: 10px 0;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    /* Phone styling */
+    .phone {
+      width: 300px;
+      height: 600px;
+      background-color: #fff;
+      border: 16px solid #333;
+      border-radius: 36px;
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+    .phone-screen {
+      flex: 1;
+      width: 100%;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .phone-screen img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    /* Result bars (hidden by default) */
+    .result-bar {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      font-weight: bold;
+      padding: 10px 0;
+      display: none;
+      z-index: 10;
+    }
+    .result-hotdog {
+      top: 0;
+      background-color: green;
+    }
+    .result-not-hotdog {
+      bottom: 0;
+      background-color: red;
+    }
+  </style>
+
+
+</head>
+<body>
+  <div class="container">
+    <div class="buttons">
+      <!-- Hidden file input -->
+      <input type="file" id="imageInput" accept="image/*" style="display:none">
+      <button id="uploadButton">Upload Image</button>
+      <button id="runButton">Run Code</button>
+    </div>
+    <div class="phone">
+      <!-- Green Hotdog bar -->
+      <div class="result-bar result-hotdog" id="hotdogBar">
+        ✓ Hotdog
+      </div>
+      <!-- Phone screen area where image appears -->
+      <div class="phone-screen" id="phoneScreen">
+        <span style="color: white;">Your image will appear here</span>
+      </div>
+      <!-- Red Not Hotdog bar -->
+      <div class="result-bar result-not-hotdog" id="notHotdogBar">
+        ✕ Not Hotdog
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    const uploadButton = document.getElementById('uploadButton');
+    const runButton = document.getElementById('runButton');
+    const imageInput = document.getElementById('imageInput');
+    const phoneScreen = document.getElementById('phoneScreen');
+    const hotdogBar = document.getElementById('hotdogBar');
+    const notHotdogBar = document.getElementById('notHotdogBar');
+    let uploadedFile = null;
+
+    // Trigger file selection when upload button is clicked
+    uploadButton.addEventListener('click', () => {
+      imageInput.click();
+    });
+
+    // When a file is selected, display it on the phone screen
+    imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if(file) {
+        uploadedFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          phoneScreen.innerHTML = '<img src="' + e.target.result + '" alt="Uploaded Image">';
+          // Hide any result bars if previously shown
+          hotdogBar.style.display = 'none';
+          notHotdogBar.style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // When the run button is clicked, send the image to the server for classification
+    runButton.addEventListener('click', () => {
+      if(!uploadedFile) {
+        alert("Please upload an image first!");
+        return;
+      }
+      const formData = new FormData();
+      formData.append('image', uploadedFile);
+
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Show the appropriate result bar based on the classification result
+        const resultText = data.result;
+        if(data.result === 'hotdog') {
+          console.log("if statement ran")
+          hotdogBar.style.display = 'block';
+          notHotdogBar.style.display = 'none';
+        } else if(data.result === 'not hotdog') {
+          console.log("else statement ran")
+          notHotdogBar.style.display = 'block';
+          HotdogBar.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+  </script>
+
+
+</body>
+</html>
