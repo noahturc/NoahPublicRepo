@@ -172,10 +172,18 @@
           console.log("if statement ran")
           hotdogBar.style.display = 'block';
           notHotdogBar.style.display = 'none';
+
+          const audio = new Audio('static/correctSound.mp3');
+          audio.play();
+
         } else if(data.result === 'not hotdog') {
           console.log("else statement ran")
           notHotdogBar.style.display = 'block';
-          HotdogBar.style.display = 'none';
+          hotdogBar.style.display = 'none';
+
+          const audio = new Audio('static/incorrectSound.mp3');
+          audio.play();
+
         }
       })
       .catch(error => {

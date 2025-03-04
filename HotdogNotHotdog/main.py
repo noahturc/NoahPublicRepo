@@ -1,7 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 from torchvision import datasets
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch import nn
 import torchvision.transforms.functional as TF
@@ -29,7 +29,6 @@ def saveAsJPEG(photosPath: str) -> None:
                 new_file_path = file_path.replace('.jfif', '.jpg')
                 img.save(new_file_path, 'JPEG')  # Save as JPEG
 
-#import deleteDuplicatePhotos
 
 # Make all images 224 by 224 and filled with padding if necessary
 def pad_to_square(image):
@@ -44,66 +43,18 @@ def pad_to_square(image):
 
     return TF.pad(image, padding, fill=0, padding_mode='constant')
 
-transformWithAugmentation = transforms.Compose([
-        transforms.Resize(224),
-        transforms.Lambda(pad_to_square),  # Pad dynamically to make the image square
-        transforms.Resize((224, 224)),      # Resize to the final size
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(10),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
-        transforms.ToTensor()
-    ])
-
 transform = transforms.Compose([
-        transforms.Resize(224),
-        transforms.Lambda(pad_to_square),  # Pad dynamically to make the image square
-        transforms.Resize((224, 224)),      # Resize to the final size
-        transforms.ToTensor()
-    ])
-
-
-
+    transforms.Lambda(pad_to_square),
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
 
 
 # Load your hotdog dataset
 hotdog_dataset = datasets.ImageFolder(root=classesFolder, transform=transform)
 
-
-#kinda useless
-
-# Define split sizes (e.g., 80% train, 20% test)
-train_size = int(0.9 * len(hotdog_dataset))
-test_size = len(hotdog_dataset) - train_size
-# Perform the split
-train_dataset, test_dataset = random_split(hotdog_dataset, [train_size, test_size])
-# Create DataLoaders
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-
 print(hotdog_dataset.class_to_idx)  
-
-
-'''
-# display random images
-
-import matplotlib.pyplot as plt
-import random
-
-image_files = os.listdir(hotdogPhotosPath)
-# Select a random image
-random_image_path = os.path.join(hotdogPhotosPath, random.choice(image_files))
-# Open the image
-image = Image.open(random_image_path).convert("RGB")
-
-# Display the image
-plt.imshow(image)
-plt.title(f"Random Image from Not Hotdog: {random_image_path}")
-plt.axis("off")
-plt.show()
-'''
-
-
-
+# This prints out: {'hotdog': 0, 'nothotdog': 1}
 
 
 class hotdogLinearModel(nn.Module):
@@ -138,29 +89,26 @@ class hotdogLinearModel(nn.Module):
         # Make prediction
         with torch.no_grad():
             output = self.forward(transformed_image)
-
+            
             # Apply sigmoid activation for binary classification
             confidence = torch.sigmoid(output).item()
 
-            # Determine label (assuming hotdog = 1, not hotdog = 0)
-            labelPrediction = "not hotdog" if confidence >= 0.56 else "hotdog"                     ###########################################################
+            # Determine label (assuming hotdog = 0, not hotdog = 1)
+            labelPrediction = "not hotdog" if confidence >= 0.50 else "hotdog"                     ###########################################################
 
             # Format confidence
             confidencePercentage = f"{confidence * 100:.2f}%"
             confidenceList = [{labelPrediction: confidencePercentage}]
 
-#        print(f'Prediction: {labelPrediction}\nConfidence: {confidenceList}')
+        print(f'Prediction: {labelPrediction}\nConfidence: {confidenceList}')
         return labelPrediction, confidenceList
 
 
 
 if __name__ == '__main__':
 
-    # Define your binary accuracy function for BCEWithLogitsLoss
     def accuracy_fn(y_true, y_pred):
-        # Apply sigmoid to get probabilities then threshold at 0.5
-        y_prob = torch.sigmoid(y_pred)
-        y_pred_labels = (y_prob > 0.5).float()
+        y_pred_labels = (y_pred > 0.5).float()
         return (y_pred_labels.squeeze() == y_true.float()).float().mean().item()
 
     # Training step: one full pass over the training data
@@ -183,29 +131,15 @@ if __name__ == '__main__':
 
         return total_loss / len(dataloader), total_acc / len(dataloader)
 
-    # Testing/validation step
-    def testStep(model, dataloader, lossFn):
-        model.eval()
-        total_loss, total_acc = 0, 0
-
-        with torch.no_grad():
-            for X, y in dataloader:
-                y_pred = model(X)
-                loss = lossFn(y_pred, y.unsqueeze(1).float())
-                total_loss += loss.item()
-                total_acc += accuracy_fn(y, y_pred)
-
-        return total_loss / len(dataloader), total_acc / len(dataloader)
 
 
 
 
 
     # Hyperparameters
-    epochs = 20
-    k_folds = 5
-    batch_size = 8
-    learning_rate = 0.01
+    epochs = 30
+    batch_size = 32
+    learning_rate = 0.001
 
 
 
@@ -215,7 +149,7 @@ if __name__ == '__main__':
     # Initialize the model (for binary classification, the model should output a single logit)
     model = hotdogLinearModel(inputShape=224*224*3, hiddenUnits=32, outputShape=1)
 
-    # Setup optimizer and loss function (using BCEWithLogitsLoss for binary classification)
+    # Setup optimizer and loss function (using BCELoss for binary classification)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     lossFn = nn.BCELoss()
 
@@ -235,16 +169,16 @@ if __name__ == '__main__':
 
 
 
-    print("--------------------------------------------\n\n\n")
-    hotdog = r"glizzy-gobblin-plz-rate-v0-tbbx4xl0i9uc1.webp"
-    HPred1, HConf1 = model.predict(hotdog)
+#    print("--------------------------------------------\n\n\n")
+#    hotdog = r"fewfwfwefwefwf - Copy.jpg"
+#    HPred1, HConf1 = model.predict(hotdog)
 
     # Open and display the image
-    image = Image.open(hotdog).convert("RGB")
-    plt.imshow(image)
-    plt.title(f"Prediction: {HPred1}")
-    plt.axis("off")
-    plt.show()
+#    image = Image.open(hotdog).convert("RGB")
+#    plt.imshow(image)
+#    plt.title(f"Prediction: {HPred1}")
+#    plt.axis("off")
+#    plt.show()
 
 
-#    torch.save(model.state_dict(), f'hotdogModel.pt')
+    torch.save(model.state_dict(), f'hotdogModel.pt')
