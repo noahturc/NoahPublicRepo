@@ -1,3 +1,3 @@
-[HotdogNotHotdog](./HotdogNotHotdog) is a directory containing the code in my youtube video [HotdogNotHotdog](https://www.youtube.com/watch?v=HPDTTaqlHPE)
+[HotdogNotHotdog](./HotdogNotHotdog) is a directory containing the code in my [youtube video](https://www.youtube.com/watch?v=HPDTTaqlHPE)
 
 [Playground](./Playground.py) is a Python file where I've created various Python functions for practice and experimentation and fun. Many functions are inspired by challenges from [Edabit](https://edabit.com/challenges/python3), marked with their difficulty level in comments above them. Everything here is manually coded, without AI assistance, as a way to learn Python syntax and improve problem-solving skills.
